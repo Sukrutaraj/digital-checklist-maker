@@ -403,6 +403,33 @@ function importJSON(){
   input.click();
 }
 
+  function generatePreview(){
+
+  updateData();
+
+  let html = `<h3>${checklistData.title}</h3>`;
+
+  checklistData.steps.forEach((step,i)=>{
+
+    html += `
+      <div>
+        <b>Step ${i+1}</b><br>
+        ${step.text || ""}<br>
+
+        ${step.img ? `<img src="${step.img}" style="max-width:100%"><br>` : ''}
+
+        ${step.audio ? `<button onclick="new Audio('${step.audio}').play()">▶️</button>` : ''}
+
+        <br><input type="checkbox"> Done
+      </div><br>
+    `;
+  });
+
+  const preview = document.getElementById("preview");
+  preview.innerHTML = html;
+  preview.style.display = "block";
+}
+  
 /* INIT */
 addStep();
 
