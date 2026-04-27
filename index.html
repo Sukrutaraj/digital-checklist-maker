@@ -149,27 +149,40 @@ function play(i){
 
 /* ===== EXPORT ===== */
 
-function exportFiles(){
+async function exportFiles(){
 
-  let delay = 0;
+  alert("Exporting files...");
+
+  // 🔒 samla allt först
+  const downloads = [];
 
   data.steps.forEach((s,i)=>{
 
     if(s.imgBlob){
-      setTimeout(()=>download(s.imgBlob,`step${i+1}.jpg`),delay);
-      delay+=300;
+      downloads.push({
+        blob: s.imgBlob,
+        name: `step${i+1}.jpg`
+      });
     }
 
     if(s.audioBlob){
-      setTimeout(()=>download(s.audioBlob,`step${i+1}.webm`),delay);
-      delay+=300;
+      downloads.push({
+        blob: s.audioBlob,
+        name: `step${i+1}.webm`
+      });
     }
 
   });
 
-  setTimeout(()=>{
-    downloadHTML();
-  }, delay + 1000); // 🔥 STABIL DELAY
+  // 🔥 ladda ner en i taget (stabilt)
+  for(let i=0;i<downloads.length;i++){
+    download(downloads[i].blob, downloads[i].name);
+    await new Promise(r=>setTimeout(r,300));
+  }
+
+  // 🔥 HTML ALLTID SIST
+  await new Promise(r=>setTimeout(r,500));
+  downloadHTML();
 }
 
 /* ===== HTML ===== */
@@ -178,7 +191,7 @@ function downloadHTML(){
 
   data.title=document.getElementById("title").value;
 
-  let html=`
+  let html = `
   <!DOCTYPE html>
   <html>
   <body>
@@ -186,19 +199,20 @@ function downloadHTML(){
   `;
 
   data.steps.forEach((s,i)=>{
-    html+=`
+    html += `
     <div>
-    <b>Step ${i+1}</b><br>
-    ${s.text||""}<br>
-    ${s.imgBlob?`<img src="./step${i+1}.jpg">`:''}
-    ${s.audioBlob?`<button onclick="new Audio('./step${i+1}.webm').play()">▶️</button>`:''}
-    <br><input type="checkbox"> Done
-    </div><br>`;
+      <b>Step ${i+1}</b><br>
+      ${s.text||""}<br>
+      ${s.imgBlob ? `<img src="./step${i+1}.jpg">` : ''}
+      ${s.audioBlob ? `<button onclick="new Audio('./step${i+1}.webm').play()">▶️</button>` : ''}
+      <br><input type="checkbox"> Done
+    </div><br>
+    `;
   });
 
-  html+=`</body></html>`;
+  html += `</body></html>`;
 
-  download(new Blob([html]),"index.html");
+  download(new Blob([html]), "index.html");
 }
 
 /* ===== JSON ===== */
