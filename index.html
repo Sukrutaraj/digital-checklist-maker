@@ -149,40 +149,36 @@ function play(i){
 
 /* ===== EXPORT ===== */
 
-async function exportFiles(){
+function exportFiles(){
 
   alert("Exporting files...");
 
-  // 🔒 samla allt först
-  const downloads = [];
+  let delay = 0;
 
   data.steps.forEach((s,i)=>{
 
+    // 📷 BILDER
     if(s.imgBlob){
-      downloads.push({
-        blob: s.imgBlob,
-        name: `step${i+1}.jpg`
-      });
+      setTimeout(()=>{
+        download(s.imgBlob, `step${i+1}.jpg`);
+      }, delay);
+      delay += 150;
     }
 
+    // 🔊 LJUD
     if(s.audioBlob){
-      downloads.push({
-        blob: s.audioBlob,
-        name: `step${i+1}.webm`
-      });
+      setTimeout(()=>{
+        download(s.audioBlob, `step${i+1}.webm`);
+      }, delay);
+      delay += 150;
     }
 
   });
 
-  // 🔥 ladda ner en i taget (stabilt)
-  for(let i=0;i<downloads.length;i++){
-    download(downloads[i].blob, downloads[i].name);
-    await new Promise(r=>setTimeout(r,300));
-  }
-
-  // 🔥 HTML ALLTID SIST
-  await new Promise(r=>setTimeout(r,500));
-  downloadHTML();
+  // 📄 HTML SIST (VIKTIGT)
+  setTimeout(()=>{
+    downloadHTML();
+  }, delay + 300);
 }
 
 /* ===== HTML ===== */
