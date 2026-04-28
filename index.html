@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Digital Aktivitets-checklista</title>
+<title>Digital Checklist Template</title>
 
 <style>
 body{
@@ -92,15 +92,15 @@ img{
 
 <body>
 
-<h2>Digital Aktivitets-checklista</h2>
+<h2>Digital Checklist Template</h2>
 
 <div class="section">
-  <input id="title" placeholder="Titel på checklistan" oninput="updateData()">
+  <input id="title" placeholder="Checklist title" oninput="updateData()">
 </div>
 
 <div id="steps"></div>
 
-<button onclick="addStep()">➕ Lägg till steg</button>
+<button onclick="addStep()">➕ Add step</button>
 
 <div class="tool-row">
 
@@ -111,24 +111,24 @@ img{
 
   <div class="tool-btn" onclick="downloadHTML()">
     <div class="icon">📄</div>
-    <div class="label">Ladda ner HTML</div>
+    <div class="label">Download HTML</div>
   </div>
 
   <div class="tool-btn" onclick="exportJSON()">
     <div class="icon">⬇️</div>
-    <div class="label">Ladda ner JSON</div>
+    <div class="label">Download JSON</div>
   </div>
 
   <div class="tool-btn" onclick="importJSON()">
     <div class="icon">⬆️</div>
-    <div class="label">Ladda upp JSON</div>
+    <div class="label">Upload JSON</div>
   </div>
 
 </div>
 
 <br>
 
-<button onclick="generatePreview()">▶️ Generera preview</button>
+<button onclick="generatePreview()">▶️ Generate preview</button>
 
 <div id="preview" class="section"></div>
 
@@ -167,9 +167,9 @@ function render(){
     div.className="section step";
 
     div.innerHTML=`
-      <b>Steg ${i+1}</b><br>
+      <b>Step ${i+1}</b><br>
 
-      <input value="${step.text||''}" placeholder="Beskrivning"
+      <input value="${step.text||''}" placeholder="Description"
       oninput="checklistData.steps[${i}].text=this.value">
 
       <br>
@@ -187,9 +187,9 @@ function render(){
         ${step.audio ? `<span>✔</span>` : ''}
       </div>
 
-      <button class="smallBtn" onclick="startRec(${i})">🎤 Spela in</button>
-      <button class="smallBtn" onclick="stopRec()">⏹ Stoppa</button>
-      <button class="smallBtn" onclick="playRec(${i})">▶️ Lyssna</button>
+      <button class="smallBtn" onclick="startRec(${i})">🎤 Record</button>
+      <button class="smallBtn" onclick="stopRec()">⏹ Stop</button>
+      <button class="smallBtn" onclick="playRec(${i})">▶️ Play</button>
 
       <br>
 
@@ -200,7 +200,7 @@ function render(){
   });
 }
 
-/* ===== STEG ===== */
+/* ===== STEPS ===== */
 
 function addStep(){
   checklistData.steps.push({text:"",img:"",audio:""});
@@ -212,7 +212,7 @@ function removeStep(i){
   render();
 }
 
-/* ===== BILD ===== */
+/* ===== IMAGE ===== */
 
 function loadImage(e,i){
   const file = e.target.files[0];
@@ -262,7 +262,7 @@ function loadImage(e,i){
   reader.readAsDataURL(file);
 }
 
-/* ===== LJUD ===== */
+/* ===== AUDIO ===== */
 
 function loadAudio(e,i){
   const file=e.target.files[0];
@@ -276,7 +276,7 @@ function loadAudio(e,i){
   reader.readAsDataURL(file);
 }
 
-/* ===== INSPELNING ===== */
+/* ===== RECORDING ===== */
 
 async function startRec(i){
   await initMic();
@@ -287,7 +287,7 @@ async function startRec(i){
   recorder.ondataavailable = e => chunks.push(e.data);
 
   recorder.onstop = () => {
-    const blob = new Blob(chunks);
+    const blob = new Blob(chunks, { type: "audio/webm" });
     const reader = new FileReader();
     reader.onload = () => {
       checklistData.steps[i].audio = reader.result;
@@ -311,11 +311,11 @@ function playRec(i){
   }
 }
 
-/* ===== EXPORT ===== */
+/* ===== EXPORT FILES ===== */
 
 async function exportFiles(){
 
-  alert("Laddar ner filer steg för steg...");
+  alert("Downloading files step by step...");
 
   let delay = 0;
 
@@ -323,14 +323,14 @@ async function exportFiles(){
 
     if(step.img){
       setTimeout(()=>{
-        download(step.img, `bild_${i+1}.jpg`);
+        download(step.img, `image_${i+1}.jpg`);
       }, delay);
       delay += 500;
     }
 
     if(step.audio){
       setTimeout(()=>{
-        download(step.audio, `ljud_${i+1}.webm`);
+        download(step.audio, `audio_${i+1}.webm`);
       }, delay);
       delay += 500;
     }
@@ -342,7 +342,7 @@ async function exportFiles(){
   }, delay + 500);
 }
 
-/* ===== HTML EXPORT ===== */
+/* ===== HTML EXPORT (FIXED DESIGN) ===== */
 
 function downloadHTML(){
 
@@ -350,7 +350,7 @@ function downloadHTML(){
 
   let html = `
   <!DOCTYPE html>
-  <html lang="sv">
+  <html lang="en">
   <head>
   <meta charset="UTF-8">
   <title>${checklistData.title}</title>
@@ -401,26 +401,26 @@ function downloadHTML(){
   checklistData.steps.forEach((s,i)=>{
     html += `
       <div class="step">
-        <b>Steg ${i+1}</b><br>
+        <b>Step ${i+1}</b><br>
         <div>${s.text||""}</div>
 
         ${s.img ? `<img src="${s.img}">` : ''}
 
-        ${s.audio ? `<button onclick="new Audio('${s.audio}').play()">▶️ Spela</button>` : ''}
+        ${s.audio ? `<button onclick="new Audio('${s.audio}').play()">▶️ Play</button>` : ''}
       </div>
     `;
   });
 
   html += `</body></html>`;
 
-  download(html, "checklista.html", "text/html");
+  download(html, "checklist.html", "text/html");
 }
 
 /* ===== JSON ===== */
 
 function exportJSON(){
   updateData();
-  download(JSON.stringify(checklistData,null,2),"checklista.json","application/json");
+  download(JSON.stringify(checklistData,null,2),"checklist.json","application/json");
 }
 
 function importJSON(){
@@ -443,9 +443,9 @@ function importJSON(){
 
         document.getElementById("title").value=checklistData.title||"";
         render();
-        alert("Checklista laddad!");
+        alert("Checklist loaded!");
       }catch{
-        alert("Ogiltig fil");
+        alert("Invalid file");
       }
     };
 
@@ -465,7 +465,7 @@ function generatePreview(){
   checklistData.steps.forEach((s,i)=>{
     html+=`
       <div>
-        <b>Steg ${i+1}</b><br>
+        <b>Step ${i+1}</b><br>
         ${s.text||""}<br>
         ${s.img ? `<img src="${s.img}">` : ''}
         ${s.audio ? `<button onclick="new Audio('${s.audio}').play()">▶️</button>` : ''}
