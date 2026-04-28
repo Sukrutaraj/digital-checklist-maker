@@ -6,17 +6,87 @@
 <title>Digital Checklist Template</title>
 
 <style>
-body{font-family:sans-serif;background:#f5f5f5;text-align:center;padding:20px;max-width:900px;margin:auto;}
-.section{background:white;padding:12px;margin:10px auto;border-radius:12px;}
-input{width:90%;padding:8px;margin:6px;border-radius:8px;border:1px solid #ddd;}
-.step{border:1px solid #eee;border-radius:10px;padding:10px;margin:8px 0;}
-img{max-height:100px;margin-top:6px;border-radius:8px;}
-.smallBtn{background:#eee;padding:6px 10px;border-radius:6px;cursor:pointer;margin:3px;}
-.tool-row{display:flex;justify-content:center;gap:25px;margin-top:15px;flex-wrap:wrap;}
-.tool-btn{display:flex;flex-direction:column;align-items:center;cursor:pointer;}
-.tool-btn .icon{width:70px;height:70px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #333;font-size:26px;background:white;}
-.tool-btn .label{margin-top:6px;font-size:13px;}
-#preview{display:none;text-align:left;}
+body{
+  font-family:sans-serif;
+  background:#f5f5f5;
+  text-align:center;
+  padding:20px;
+  max-width:900px;
+  margin:auto;
+}
+
+.section{
+  background:white;
+  padding:12px;
+  margin:10px auto;
+  border-radius:12px;
+}
+
+input{
+  width:90%;
+  padding:8px;
+  margin:6px;
+  border-radius:8px;
+  border:1px solid #ddd;
+}
+
+.step{
+  border:1px solid #eee;
+  border-radius:10px;
+  padding:10px;
+  margin:8px 0;
+}
+
+img{
+  max-height:100px;
+  margin-top:6px;
+  border-radius:8px;
+}
+
+.smallBtn{
+  background:#eee;
+  padding:6px 10px;
+  border-radius:6px;
+  cursor:pointer;
+  margin:3px;
+}
+
+.tool-row{
+  display:flex;
+  justify-content:center;
+  gap:25px;
+  margin-top:15px;
+  flex-wrap:wrap;
+}
+
+.tool-btn{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  cursor:pointer;
+}
+
+.tool-btn .icon{
+  width:70px;
+  height:70px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:2px solid #333;
+  font-size:26px;
+  background:white;
+}
+
+.tool-btn .label{
+  margin-top:6px;
+  font-size:13px;
+}
+
+#preview{
+  display:none;
+  text-align:left;
+}
 </style>
 </head>
 
@@ -25,110 +95,135 @@ img{max-height:100px;margin-top:6px;border-radius:8px;}
 <h2>Digital Checklist Template</h2>
 
 <div class="section">
-  <input id="title" placeholder="Checklist title">
+  <input id="title" placeholder="Checklist title" oninput="updateData()">
 </div>
 
 <div id="steps"></div>
+
 <button onclick="addStep()">➕ Add step</button>
 
 <div class="tool-row">
+
   <div class="tool-btn" onclick="exportFiles()">
     <div class="icon">📁</div>
     <div class="label">Export (GitHub)</div>
   </div>
+
   <div class="tool-btn" onclick="downloadHTML()">
     <div class="icon">📄</div>
     <div class="label">Download HTML</div>
   </div>
+
   <div class="tool-btn" onclick="exportJSON()">
     <div class="icon">⬇️</div>
     <div class="label">Download JSON</div>
   </div>
+
   <div class="tool-btn" onclick="importJSON()">
     <div class="icon">⬆️</div>
     <div class="label">Upload JSON</div>
   </div>
+
 </div>
 
 <br>
+
 <button onclick="generatePreview()">▶️ Generate preview</button>
+
 <div id="preview" class="section"></div>
 
 <script>
 
-let data = { title:"", steps:[] };
+let checklistData = { title:"", steps:[] };
 
-/* ===== STEPS ===== */
+let stream = null;
+let recorder = null;
+let chunks = [];
+let currentStepIndex = null;
 
-function addStep(){
-  data.steps.push({});
-  render();
+/* ===== DATA ===== */
+
+function updateData(){
+  checklistData.title = document.getElementById("title").value;
 }
 
-function removeStep(i){
-  data.steps.splice(i,1);
-  render();
+/* ===== MIC ===== */
+
+async function initMic(){
+  if(!stream){
+    stream = await navigator.mediaDevices.getUserMedia({audio:true});
+  }
 }
 
 /* ===== RENDER ===== */
 
 function render(){
-  const c=document.getElementById("steps");
-  c.innerHTML="";
+  const container=document.getElementById("steps");
+  container.innerHTML="";
 
-  data.steps.forEach((s,i)=>{
-    c.innerHTML+=`
-    <div class="section step">
+  checklistData.steps.forEach((step,i)=>{
+
+    const div=document.createElement("div");
+    div.className="section step";
+
+    div.innerHTML=`
       <b>Step ${i+1}</b><br>
 
-      <input value="${s.text||""}" placeholder="Description"
-      oninput="data.steps[${i}].text=this.value">
+      <input value="${step.text||''}" placeholder="Description"
+      oninput="checklistData.steps[${i}].text=this.value">
 
       <br>
 
-      <input type="file" onchange="loadImage(event,${i})"><br>
-      ${s.img?`<img src="${s.img}">`:''}
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span>📷</span>
+        <input type="file" onchange="loadImage(event,${i})">
+      </div>
 
-      <input type="file" accept="audio/*" onchange="loadAudio(event,${i})"><br>
+      ${step.img ? `<img src="${step.img}">` : ''}
 
-      <button onclick="play(${i})">▶️ Play</button>
-      <button onclick="removeStep(${i})">🗑</button>
-    </div>`;
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span>🔊</span>
+        <input type="file" accept="audio/*" onchange="loadAudio(event,${i})">
+        ${step.audio ? `<span>✔</span>` : ''}
+      </div>
+
+      <button class="smallBtn" onclick="startRec(${i})">🎤 Record</button>
+      <button class="smallBtn" onclick="stopRec()">⏹ Stop</button>
+      <button class="smallBtn" onclick="playRec(${i})">▶️ Play</button>
+
+      <br>
+
+      <button class="smallBtn" onclick="removeStep(${i})">🗑</button>
+    `;
+
+    container.appendChild(div);
   });
+}
+
+/* ===== STEPS ===== */
+
+function addStep(){
+  checklistData.steps.push({text:"",img:"",audio:""});
+  render();
+}
+
+function removeStep(i){
+  checklistData.steps.splice(i,1);
+  render();
 }
 
 /* ===== IMAGE ===== */
 
 function loadImage(e,i){
-  const file=e.target.files[0];
+  const file = e.target.files[0];
   if(!file) return;
 
-  const img=new Image();
-  const r=new FileReader();
-
-  r.onload=e=>{
-    img.onload=()=>{
-      const canvas=document.createElement("canvas");
-      const ctx=canvas.getContext("2d");
-
-      let w=img.width, h=img.height;
-      if(w>600){h*=600/w;w=600;}
-
-      canvas.width=w;
-      canvas.height=h;
-
-      ctx.drawImage(img,0,0,w,h);
-
-      canvas.toBlob(blob=>{
-        data.steps[i].imgBlob=blob;
-        data.steps[i].img=URL.createObjectURL(blob);
-        render();
-      },"image/jpeg",0.6);
-    };
-    img.src=e.target.result;
+  const reader = new FileReader();
+  reader.onload = ()=>{ 
+    checklistData.steps[i].img = reader.result;
+    render();
   };
-
-  r.readAsDataURL(file);
+  reader.readAsDataURL(file);
 }
 
 /* ===== AUDIO ===== */
@@ -137,98 +232,187 @@ function loadAudio(e,i){
   const file=e.target.files[0];
   if(!file) return;
 
-  data.steps[i].audioBlob=file;
-  data.steps[i].audio=URL.createObjectURL(file);
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    checklistData.steps[i].audio = reader.result;
+    render();
+  };
+  reader.readAsDataURL(file);
 }
 
-function play(i){
-  if(data.steps[i].audio){
-    new Audio(data.steps[i].audio).play();
+/* ===== RECORDING ===== */
+
+async function startRec(i){
+  await initMic();
+  currentStepIndex = i;
+  chunks = [];
+
+  recorder = new MediaRecorder(stream);
+  recorder.ondataavailable = e => chunks.push(e.data);
+
+  recorder.onstop = () => {
+    const blob = new Blob(chunks);
+    const reader = new FileReader();
+    reader.onload = () => {
+      checklistData.steps[i].audio = reader.result;
+      render();
+    };
+    reader.readAsDataURL(blob);
+  };
+
+  recorder.start();
+}
+
+function stopRec(){
+  if(recorder && recorder.state === "recording"){
+    recorder.stop();
   }
 }
 
-/* ===== EXPORT ===== */
+function playRec(i){
+  if(checklistData.steps[i].audio){
+    new Audio(checklistData.steps[i].audio).play();
+  }
+}
 
-function exportFiles(){
+/* ===== EXPORT FILES ===== */
 
-  alert("Exporting files...");
+async function exportFiles(){
+
+  alert("Downloading files step by step...");
 
   let delay = 0;
 
-  data.steps.forEach((s,i)=>{
+  checklistData.steps.forEach((step,i)=>{
 
-    // 📷 BILDER
-    if(s.imgBlob){
+    if(step.img){
       setTimeout(()=>{
-        download(s.imgBlob, `step${i+1}.jpg`);
+        download(step.img, `image_${i+1}.jpg`);
       }, delay);
-      delay += 150;
+      delay += 500;
     }
 
-    // 🔊 LJUD
-    if(s.audioBlob){
+    if(step.audio){
       setTimeout(()=>{
-        download(s.audioBlob, `step${i+1}.webm`);
+        download(step.audio, `audio_${i+1}.webm`);
       }, delay);
-      delay += 150;
+      delay += 500;
     }
 
   });
 
-  // 📄 HTML SIST (VIKTIGT)
   setTimeout(()=>{
     downloadHTML();
-  }, delay + 300);
+  }, delay + 500);
 }
 
-/* ===== HTML ===== */
+/* ===== HTML EXPORT (FIXED DESIGN) ===== */
 
 function downloadHTML(){
 
-  data.title=document.getElementById("title").value;
+  updateData();
 
   let html = `
   <!DOCTYPE html>
-  <html>
+  <html lang="en">
+  <head>
+  <meta charset="UTF-8">
+  <title>${checklistData.title}</title>
+
+  <style>
+    body{
+      font-family:sans-serif;
+      background:#f5f5f5;
+      padding:20px;
+      max-width:900px;
+      margin:auto;
+    }
+
+    h2{
+      text-align:center;
+    }
+
+    .step{
+      background:white;
+      padding:12px;
+      margin:12px 0;
+      border-radius:12px;
+    }
+
+    img{
+      max-width:250px;
+      border-radius:10px;
+      display:block;
+      margin-top:8px;
+    }
+
+    button{
+      margin-top:8px;
+      padding:6px 10px;
+      border-radius:6px;
+      border:none;
+      background:#eee;
+      cursor:pointer;
+    }
+  </style>
+  </head>
+
   <body>
-  <h2>${data.title}</h2>
+
+  <h2>${checklistData.title}</h2>
   `;
 
-  data.steps.forEach((s,i)=>{
+  checklistData.steps.forEach((s,i)=>{
     html += `
-    <div>
-      <b>Step ${i+1}</b><br>
-      ${s.text||""}<br>
-      ${s.imgBlob ? `<img src="./step${i+1}.jpg">` : ''}
-      ${s.audioBlob ? `<button onclick="new Audio('./step${i+1}.webm').play()">▶️</button>` : ''}
-      <br><input type="checkbox"> Done
-    </div><br>
+      <div class="step">
+        <b>Step ${i+1}</b><br>
+        <div>${s.text||""}</div>
+
+        ${s.img ? `<img src="${s.img}">` : ''}
+
+        ${s.audio ? `<button onclick="new Audio('${s.audio}').play()">▶️ Play</button>` : ''}
+      </div>
     `;
   });
 
   html += `</body></html>`;
 
-  download(new Blob([html]), "index.html");
+  download(html, "checklist.html", "text/html");
 }
 
 /* ===== JSON ===== */
 
 function exportJSON(){
-  data.title=document.getElementById("title").value;
-  download(new Blob([JSON.stringify(data,null,2)]),"checklist.json");
+  updateData();
+  download(JSON.stringify(checklistData,null,2),"checklist.json","application/json");
 }
 
 function importJSON(){
+
   let input=document.createElement("input");
   input.type="file";
 
   input.onchange=e=>{
     let r=new FileReader();
+
     r.onload=()=>{
-      data=JSON.parse(r.result);
-      document.getElementById("title").value=data.title||"";
-      render();
+      try{
+        checklistData=JSON.parse(r.result);
+
+        checklistData.steps = (checklistData.steps || []).map(s=>({
+          text:s.text||"",
+          img:s.img||"",
+          audio:s.audio||""
+        }));
+
+        document.getElementById("title").value=checklistData.title||"";
+        render();
+        alert("Checklist loaded!");
+      }catch{
+        alert("Invalid file");
+      }
     };
+
     r.readAsText(e.target.files[0]);
   };
 
@@ -238,34 +422,41 @@ function importJSON(){
 /* ===== PREVIEW ===== */
 
 function generatePreview(){
+  updateData();
 
-  data.title=document.getElementById("title").value;
+  let html=`<h3>${checklistData.title}</h3>`;
 
-  let html=`<h3>${data.title}</h3>`;
-
-  data.steps.forEach((s,i)=>{
+  checklistData.steps.forEach((s,i)=>{
     html+=`
-    <div>
-    <b>Step ${i+1}</b><br>
-    ${s.text||""}<br>
-    ${s.img?`<img src="${s.img}">`:''}
-    ${s.audio?`<button onclick="new Audio('${s.audio}').play()">▶️</button>`:''}
-    <br><input type="checkbox"> Done
-    </div><br>`;
+      <div>
+        <b>Step ${i+1}</b><br>
+        ${s.text||""}<br>
+        ${s.img ? `<img src="${s.img}">` : ''}
+        ${s.audio ? `<button onclick="new Audio('${s.audio}').play()">▶️</button>` : ''}
+      </div><br>
+    `;
   });
 
-  const preview=document.getElementById("preview");
-  preview.innerHTML=html;
+  const preview = document.getElementById("preview");
+  preview.innerHTML = html;
   preview.style.display="block";
 }
 
 /* ===== DOWNLOAD ===== */
 
-function download(blob,name){
+function download(data,name,type="text/plain"){
+  const blob = new Blob([data],{type});
+  const url = URL.createObjectURL(blob);
+
   const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
+  a.href=url;
   a.download=name;
+
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
+
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
 /* INIT */
