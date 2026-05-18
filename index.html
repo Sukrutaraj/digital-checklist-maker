@@ -323,13 +323,10 @@ async function createLink() {
       copied = true;
     } catch(e) {}
 
-    alert(
-      "Link created!\n\n" +
-      url +
-      "\n\n" +
-      (copied ? "✔ Copied to clipboard" : "⚠️ Copy manually") +
-      "\n\nWait 10–20 seconds before opening."
-    );
+    prompt(
+  "Copy your share link:",
+  url
+);
 
     setTimeout(() => window.open(url, "_blank"), 15000);
 
