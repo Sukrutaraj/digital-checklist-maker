@@ -121,10 +121,7 @@ button:active, .smallBtn:active {
 <div id="steps"></div>
 
 <button onclick="addStep()">➕ Add step</button>
-  <button onclick="testShare()">
-🧪 Test Share System
-</button>
-
+ 
 <div class="tool-row">
 
   <div class="tool-btn" onclick="downloadHTML()">
@@ -323,9 +320,12 @@ async function createLink() {
       copied = true;
     } catch(e) {}
 
-    prompt(
-  "Copy your share link:",
-  url
+    alert(
+  "Delbar länk skapad!\n\n" +
+  "Kopiera länken nedan:\n\n" +
+  url +
+  "\n\n" +
+  "Vänta 20–30 sekunder innan du öppnar länken första gången."
 );
 
     setTimeout(() => window.open(url, "_blank"), 15000);
@@ -590,29 +590,6 @@ function download(data, name, type = "text/plain") {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-async function testShare() {
-
-  const htmlContent =
-    document.documentElement.outerHTML;
-
-  const url = await createShareLink({
-
-    repo: "Sukrutaraj/checklist-pages",
-
-    htmlContent
-
-  });
-
-  if (url) {
-
-    prompt(
-      "Kopiera länken:",
-      url
-    );
-
-  }
-
-}
 
 /* INIT */
 addStep();
