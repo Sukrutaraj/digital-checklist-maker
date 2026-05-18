@@ -121,6 +121,9 @@ button:active, .smallBtn:active {
 <div id="steps"></div>
 
 <button onclick="addStep()">➕ Add step</button>
+  <button onclick="testShare()">
+🧪 Test Share System
+</button>
 
 <div class="tool-row">
 
@@ -589,10 +592,35 @@ function download(data, name, type = "text/plain") {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+  async function testShare() {
+
+  const htmlContent =
+    document.documentElement.outerHTML;
+
+  const url = await createShareLink({
+
+    repo: "Sukrutaraj/checklist-pages",
+
+    htmlContent
+
+  });
+
+  if (url) {
+
+    alert(
+      "Delbar länk skapad:\n\n" + url
+    );
+
+  }
+
+}
+  
 /* INIT */
 addStep();
 
 </script>
 
+<script src="js/share.js"></script>
+  
 </body>
 </html>
