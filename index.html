@@ -308,11 +308,13 @@ async function createLink() {
 
     const htmlName = basePath + ".html";
 
-    await uploadFile(
-      htmlName,
-      btoa(unescape(encodeURIComponent(sharedHtml))),
-      token
-    );
+    const url = await createShareLink({
+
+  repo: "Sukrutaraj/checklist-pages",
+
+  htmlContent: sharedHtml
+
+});
 
     const url = "https://sukrutaraj.github.io/checklist-pages/" + htmlName;
 
