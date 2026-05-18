@@ -607,13 +607,30 @@ function download(data, name, type = "text/plain") {
 
   if (url) {
 
-    alert(
-      "Delbar länk skapad:\n\n" + url
-    );
+  let copied = false;
+
+  try {
+
+    await navigator.clipboard.writeText(url);
+    copied = true;
+
+  } catch(e) {
+
+    console.error(e);
 
   }
 
+  alert(
+    "Delbar länk skapad:\n\n" +
+    url +
+    "\n\n" +
+    (copied
+      ? "✔ Länken kopierades"
+      : "⚠️ Kunde inte kopiera automatiskt")
+  );
+
 }
+
   
 /* INIT */
 addStep();
