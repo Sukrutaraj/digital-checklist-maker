@@ -196,13 +196,17 @@ async function createLink() {
 
   updateData();
 
-  const hasContent = checklistData.steps.some(s => s.text || s.img || s.audio);
+  const hasContent = checklistData.steps.some(
+    s => s.text || s.img || s.audio
+  );
 
   if (!checklistData.title && !hasContent) {
     alert("The checklist is empty.");
     return;
   }
 
+  /* TEMP LEGACY TOKEN SYSTEM
+     Needed only for image/audio uploads for now */
   let token = localStorage.getItem("gh_token");
 
   if (!token) {
@@ -214,8 +218,9 @@ async function createLink() {
   const id = Date.now();
   const basePath = `checklist-${id}`;
 
-  // Build the shared HTML using safe string arrays (no template literal conflicts)
-  const safeTitle = checklistData.title.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const safeTitle = checklistData.title
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 
   const css = [
     "body{font-family:sans-serif;padding:20px;background:#f5f5f5;max-width:900px;margin:auto;}",
@@ -231,110 +236,185 @@ async function createLink() {
   ].join("\n");
 
   try {
+
     let stepsHtml = "";
 
     for (let i = 0; i < checklistData.steps.length; i++) {
+
       const s = checklistData.steps[i];
+
       if (!s.text && !s.img && !s.audio) continue;
 
       let stepContent = "";
-      stepContent += "<input type='checkbox' onchange='toggleStep(this)'>";
-      stepContent += "<div class='text'><b>" + (i + 1) + ". " + (s.text || "") + "</b><br>";
 
+      stepContent +=
+        "<input type='checkbox' onchange='toggleStep(this)'>";
+
+      stepContent +=
+        "<div class='text'><b>" +
+        (i + 1) +
+        ". " +
+        (s.text || "") +
+        "</b><br>";
+
+      /* IMAGE */
       if (s.img) {
-        const imgName = basePath + "-img-" + i + ".jpg";
-        const base64 = s.img.split(",")[1];
-        await uploadFile(imgName, base64, token);
-        await new Promise(r => setTimeout(r, 300));
-        stepContent += "<img src='https://sukrutaraj.github.io/checklist-pages/" + imgName + "'><br>";
+
+        const imgName =
+          basePath + "-img-" + i + ".jpg";
+
+        const base64 =
+          s.img.split(",")[1];
+
+        await uploadFile(
+          imgName,
+          base64,
+          token
+        );
+
+        await new Promise(r =>
+          setTimeout(r, 300)
+        );
+
+        stepContent +=
+          "<img src='https://sukrutaraj.github.io/checklist-pages/" +
+          imgName +
+          "'><br>";
       }
 
+      /* AUDIO */
       if (s.audio) {
-        const audioName = basePath + "-audio-" + i + ".webm";
-        const base64 = s.audio.split(",")[1];
-        await uploadFile(audioName, base64, token);
-        await new Promise(r => setTimeout(r, 300));
-        stepContent += "<button onclick=\"new Audio('https://sukrutaraj.github.io/checklist-pages/" + audioName + "').play()\">🔊 Play</button>";
+
+        const audioName =
+          basePath + "-audio-" + i + ".webm";
+
+        const base64 =
+          s.audio.split(",")[1];
+
+        await uploadFile(
+          audioName,
+          base64,
+          token
+        );
+
+        await new Promise(r =>
+          setTimeout(r, 300)
+        );
+
+        stepContent +=
+          "<button onclick=\"new Audio('https://sukrutaraj.github.io/checklist-pages/" +
+          audioName +
+          "').play()\">🔊 Play</button>";
       }
 
       stepContent += "</div>";
-      stepsHtml += "<div class='step'>" + stepContent + "</div>";
+
+      stepsHtml +=
+        "<div class='step'>" +
+        stepContent +
+        "</div>";
     }
 
     const scriptLines = [
+
       "function toggleStep(el){",
       "  var step=el.closest('.step');",
       "  step.classList.toggle('completed',el.checked);",
       "  updateProgress();",
       "}",
+
       "function updateProgress(){",
       "  var total=document.querySelectorAll('.step').length;",
       "  var done=document.querySelectorAll('.step input:checked').length;",
       "  document.getElementById('progressText').textContent=done+' of '+total+' completed';",
       "}",
+
       "function resetChecklist(){",
       "  document.querySelectorAll('input[type=\"checkbox\"]').forEach(function(c){c.checked=false;});",
       "  document.querySelectorAll('.step').forEach(function(d){d.classList.remove('completed');});",
       "  updateProgress();",
       "}",
+
       "updateProgress();"
+
     ].join("\n");
 
     const sharedHtml = [
+
       "<!DOCTYPE html>",
       "<html lang='en'>",
+
       "<head>",
       "<meta charset='UTF-8'>",
       "<meta name='viewport' content='width=device-width, initial-scale=1.0'>",
+
       "<title>" + safeTitle + "</title>",
-      "<style>", css, "</style>",
+
+      "<style>",
+      css,
+      "</style>",
+
       "</head>",
+
       "<body>",
+
       "<h2>" + safeTitle + "</h2>",
+
       "<div id='steps'>",
       stepsHtml,
       "</div>",
+
       "<div class='progress' id='progressText'>0 of 0 completed</div>",
+
       "<button class='reset-btn' onclick='resetChecklist()'>🔄 Reset</button>",
+
       "<script>",
       scriptLines,
       "<" + "/script>",
+
       "</body>",
       "</html>"
+
     ].join("\n");
 
-    const htmlName = basePath + ".html";
-
+    /* NEW BACKEND SHARE SYSTEM */
     const url = await createShareLink({
 
-  repo: "Sukrutaraj/checklist-pages",
+      repo: "Sukrutaraj/checklist-pages",
 
-  htmlContent: sharedHtml
+      htmlContent: sharedHtml
 
-});
+    });
 
-    
-    let copied = false;
+    if (!url) {
+      throw new Error("Failed to create share link");
+    }
+
+    /* TRY AUTO COPY */
     try {
       await navigator.clipboard.writeText(url);
-      copied = true;
-    } catch(e) {}
+    } catch(e) {
+      console.error(e);
+    }
 
     alert(
-  "Delbar länk skapad!\n\n" +
-  "Kopiera länken nedan:\n\n" +
-  url +
-  "\n\n" +
-  "Vänta 20–30 sekunder innan du öppnar länken första gången."
-);
+      "Delbar länk skapad!\n\n" +
+      url +
+      "\n\n" +
+      "Kopiera länken och vänta 20–30 sekunder innan den öppnas första gången."
+    );
 
-    setTimeout(() => window.open(url, "_blank"), 15000);
+    setTimeout(() => {
+      window.open(url, "_blank");
+    }, 15000);
 
   } catch(err) {
-    alert("Error: " + err.message);
-  }
-}
 
+    alert("Error: " + err.message);
+
+  }
+
+}
 /* ===== DATA ===== */
 function updateData() {
   checklistData.title = document.getElementById("title").value;
